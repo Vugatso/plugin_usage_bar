@@ -1,9 +1,5 @@
-import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
-const lines = atom({ plugin: 'usage-bar', key: 'lines' } as const, [], {
-  shape: 'lines-1',
-})
 
 const STYLES = ['pacman', 'beer', 'tank', 'battery', 'hourglass'] as const
 type Style = (typeof STYLES)[number]
@@ -85,6 +81,7 @@ export const register: Register = (on, options) => {
   let working = false
   let frame = 0
   let style: Style = isStyle(options?.style) ? options.style : 'pacman'
+  let rows: string[] = []
   let tick: { cancel: () => void } | undefined
 
   const compose = (now: number): string[] => {
@@ -125,14 +122,15 @@ export const register: Register = (on, options) => {
     if (isStyle(saved)) style = saved
     tick = $.clock.every(500, () => {
       frame += 1
-      void $.clock.now().then((now: number) => update($, lines, () => compose(now)))
+      void $.clock.now().then((now: number) => (rows = compose(now), $.ui.invalidate('ui.render')))
     })
     await $.command.register({
       name: 'usagebar',
       description: `Pick the usage bar style: ${STYLES.join(', ')}`,
     })
     const now = await $.clock.now()
-    await update($, lines, () => compose(now))
+    rows = compose(now)
+    $.ui.invalidate('ui.render')
     return next(e)
   })
 
@@ -145,14 +143,16 @@ export const register: Register = (on, options) => {
   on('turn.complete', async ($, e, next) => {
     working = false
     const now = await $.clock.now()
-    await update($, lines, () => compose(now))
+    rows = compose(now)
+    $.ui.invalidate('ui.render')
     return next(e)
   })
 
   on('session.measure', async ($, e, next) => {
     limits = e.rateLimits
     const now = await $.clock.now()
-    await update($, lines, () => compose(now))
+    rows = compose(now)
+    $.ui.invalidate('ui.render')
     return next(e)
   })
 
@@ -164,12 +164,12 @@ export const register: Register = (on, options) => {
     style = want
     await $.store.set('style', want)
     const now = await $.clock.now()
-    await update($, lines, () => compose(now))
+    rows = compose(now)
+    $.ui.invalidate('ui.render')
     return { text: `usage-bar style: ${want}` }
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    const rows = await read($, lines)
     if (e.props.hasSurvey || rows.length === 0) {
       return next(e)
     }

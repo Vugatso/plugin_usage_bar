@@ -1,6 +1,6 @@
 {
   "name": "usage-bar",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Animated 5-hour and 7-day usage bars in a band above the prompt (terminal and desktop): percent, reset countdown, pace mark, projection, per-answer delta; styles pacman, beer, tank, battery, hourglass.",
   "userConfig": {
     "style": {
@@ -20,6 +20,5 @@
   "license": "MIT",
   "author": {
     "name": "Vugatso"
-  },
-  "types": "./types/index.d.ts"
+  }
 }
